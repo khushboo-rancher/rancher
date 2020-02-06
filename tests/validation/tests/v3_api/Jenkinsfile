@@ -69,6 +69,12 @@ node {
               echo 'Test run had failures. Collecting results...'
             }
           }
+          stage('Log Collection') {
+            sh "docker cp ${testContainer}:${rootPath}tests/v3_api/logs/apptestlogs.log ."
+            timeout(5) {
+              archiveArtifacts '*.log'
+            }
+          }
 
           stage('Test Report') {
             sh "docker cp ${testContainer}:${rootPath}${testResultsOut} ."

@@ -23,15 +23,26 @@ from .common import validate_catalog_app
 from .common import get_project_client_for_token
 from .common import USER_TOKEN
 from .common import get_user_client
-
+import logging
 
 cluster_info = {"cluster": None, "cluster_client": None,
                 "project": None, "project_client": None,
                 "user_client": None}
 catalog_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                "./resource/cataloglib_appversion.json")
+                                "resource/cataloglib_appversion.json")
+
+log_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                "logs/apptestlogs.log")
+
+
 with open(catalog_filename, "r") as app_v:
     app_data = json.load(app_v)
+
+logging.basicConfig(filename=log_filename,
+                    format='%(asctime)s %(message)s',
+                    filemode='w',
+                    level=logging.INFO)
+logger = logging.getLogger()
 
 
 @pytest.mark.parametrize('app_name, app_version', app_data.items())
@@ -43,55 +54,59 @@ def test_catalog_app_deploy(app_name, app_version):
     try block is to make sure apps are deleted even
     after they fail to validate.
     """
-    user_client = cluster_info["user_client"]
-    project_client = cluster_info["project_client"]
-    cluster_client = cluster_info["cluster_client"]
-    cluster = cluster_info["cluster"]
-    project = cluster_info["project"]
+    print(catalog_filename)
+    print(log_filename)
+    logger.info("test started")
+    # user_client = cluster_info["user_client"]
+    # project_client = cluster_info["project_client"]
+    # cluster_client = cluster_info["cluster_client"]
+    # cluster = cluster_info["cluster"]
+    # project = cluster_info["project"]
+    # logger.info("Starting test")
+    # ns = create_ns(cluster_client, cluster, project, app_name)
+    # app_ext_id = create_catalog_external_id('library',
+    #                                         app_name, app_version)
+    # answer = get_defaut_question_answers(user_client, app_ext_id)
+    logger.info("namespace created {}".format(app_name))
+    # try:
+    #     app = project_client.create_app(
+    #                             name=random_test_name(),
+    #                             externalId=app_ext_id,
+    #                             targetNamespace=ns.name,
+    #                             projectId=ns.projectId,
+    #                             answers=answer)
+    #     validate_catalog_app(project_client, app, app_ext_id, answer)
+    # except (AssertionError, RuntimeError):
+    #     project_client.delete(app)
+    #     validate_app_deletion(project_client, app.id)
+    #     user_client.delete(ns)
+    #     assert False, "App deployment/Validation failed."
+    # project_client.delete(app)
+    # validate_app_deletion(project_client, app.id)
+    # user_client.delete(ns)
 
-    ns = create_ns(cluster_client, cluster, project, app_name)
-    app_ext_id = create_catalog_external_id('library',
-                                            app_name, app_version)
-    answer = get_defaut_question_answers(user_client, app_ext_id)
-    try:
-        app = project_client.create_app(
-                                name=random_test_name(),
-                                externalId=app_ext_id,
-                                targetNamespace=ns.name,
-                                projectId=ns.projectId,
-                                answers=answer)
-        validate_catalog_app(project_client, app, app_ext_id, answer)
-    except (AssertionError, RuntimeError):
-        project_client.delete(app)
-        validate_app_deletion(project_client, app.id)
-        user_client.delete(ns)
-        assert False, "App deployment/Validation failed."
-    project_client.delete(app)
-    validate_app_deletion(project_client, app.id)
-    user_client.delete(ns)
 
-
-@pytest.fixture(scope='module', autouse="True")
-def create_project_client(request):
-    """
-    Creates project in a cluster and collects details of
-    user, project and cluster
-    """
-    user_client, cluster = get_user_client_and_cluster()
-    create_kubeconfig(cluster)
-    cluster_client = get_cluster_client_for_token(cluster, USER_TOKEN)
-    project = create_project(user_client, cluster,
-                             random_test_name("App-deployment"))
-    project_client = get_project_client_for_token(project, USER_TOKEN)
-
-    cluster_info["cluster"] = cluster
-    cluster_info["cluster_client"] = cluster_client
-    cluster_info["project"] = project
-    cluster_info["project_client"] = project_client
-    cluster_info["user_client"] = user_client
-
-    def fin():
-        client = get_user_client()
-        client.delete(cluster_info["project"])
-
-    request.addfinalizer(fin)
+# @pytest.fixture(scope='module', autouse="True")
+# def create_project_client(request):
+#     """
+#     Creates project in a cluster and collects details of
+#     user, project and cluster
+#     """
+#     user_client, cluster = get_user_client_and_cluster()
+#     create_kubeconfig(cluster)
+#     cluster_client = get_cluster_client_for_token(cluster, USER_TOKEN)
+#     project = create_project(user_client, cluster,
+#                              random_test_name("App-deployment"))
+#     project_client = get_project_client_for_token(project, USER_TOKEN)
+#
+#     cluster_info["cluster"] = cluster
+#     cluster_info["cluster_client"] = cluster_client
+#     cluster_info["project"] = project
+#     cluster_info["project_client"] = project_client
+#     cluster_info["user_client"] = user_client
+#
+#     def fin():
+#         client = get_user_client()
+#         client.delete(cluster_info["project"])
+#
+#     request.addfinalizer(fin)
